@@ -12,8 +12,11 @@ import ShoppingCartOutlined from "@mui/icons-material/ShoppingCartOutlined";
 const Product = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  // 1. Create the state for cart items
   const [cartItems, setCartItems] = useState([]);
+
+  // ✅ Get real token and user scope for data isolation
+  const token = localStorage.getItem("token");
+  const username = localStorage.getItem("username") || "guest";
 
   // 1. GET Function (Fetch cart from server)
   const fetchCart = async (token) => {
@@ -23,13 +26,11 @@ const Product = () => {
       const response = await axios.get(
         "https://fakestoreapi.com/carts/user/1",
         {
-          // Using user 1 as an example
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      // Map the API data to match your Cart component's expected format
       const formattedCart = response.data.products.map((p) => ({
         productId: p.productId,
         qty: p.quantity,
@@ -42,7 +43,6 @@ const Product = () => {
 
   // 2. POST Function (Update cart on server)
   const updateCartApi = async (productId, qty) => {
-    const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
@@ -64,16 +64,29 @@ const Product = () => {
     }
   };
 
-  // 2. Define the function to handle adding items
-  // 1. Update the addToCart logic to use 'productId'
+  const handleQuantity = (productId, newQty) => {
+    let updatedItems;
+
+    if (newQty === 0) {
+      updatedItems = cartItems.filter(item => item.productId !== productId);
+    } else {
+      updatedItems = cartItems.map(item => 
+        item.productId === productId ? { ...item, qty: newQty } : item
+      );
+    }
+    setCartItems(updatedItems);
+    
+    // ✅ User-scoped localStorage key
+    localStorage.setItem(`cart_${username}`, JSON.stringify(updatedItems));
+    updateCartApi(productId, newQty);
+  };
+
   const addToCart = (product) => {
-    const token = localStorage.getItem("token");
     if (!token) {
       alert("Please login to add items to the cart");
       return;
     }
 
-    // Local state update (immediate UI feedback)
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(
         (item) => item.productId === product.id
@@ -84,19 +97,18 @@ const Product = () => {
         newItems = prevItems.map((item) =>
           item.productId === product.id ? { ...item, qty: item.qty + 1 } : item
         );
-        // API call to update quantity
         updateCartApi(product.id, existingItem.qty + 1);
       } else {
         newItems = [...prevItems, { productId: product.id, qty: 1 }];
-        // API call to add new item
         updateCartApi(product.id, 1);
       }
+
+      // ✅ User-scoped localStorage key
+      localStorage.setItem(`cart_${username}`, JSON.stringify(newItems));
+
       return newItems;
     });
   };
-
- 
-  const token = true; // 🔥 TEMP (replace with real auth)
 
   const list = async (searchTerm = "") => {
     try {
@@ -120,20 +132,20 @@ const Product = () => {
 
   useEffect(() => {
     const onLoad = async () => {
-      // 1. Fetch products first
       await list();
 
-      // 2. Get real token and fetch the cart
-      const token = localStorage.getItem("token");
-      if (token) {
-        await fetchCart(token);
+      // ✅ Load user-specific cart from localStorage
+      const savedCart = localStorage.getItem(`cart_${username}`);
+      if (savedCart) {
+        setCartItems(JSON.parse(savedCart));
+      } else if (token) {
+        fetchCart(token);
       }
     };
 
     onLoad();
-  }, []);
+  }, [username]);
 
-  // 🔹 Only product grid here
   const renderProducts = () => (
     <Grid container sx={{ marginTop: 4 }} spacing={2}>
       {products.map((product) => (
@@ -158,7 +170,7 @@ const Product = () => {
                 variant="contained"
                 color="primary"
                 startIcon={<ShoppingCartOutlined />}
-                onClick={() => addToCart(product)} // This calls the function below
+                onClick={() => addToCart(product)}
               >
                 ADD TO CART
               </Button>
@@ -171,7 +183,6 @@ const Product = () => {
 
   return (
     <>
-      {/* ✅ Render ONCE */}
       <Header performSearch={list} />
 
       <Box
@@ -196,7 +207,7 @@ const Product = () => {
                 md={3}
                 sx={{ bgcolor: "#E9F5E1", minHeight: "100vh" }}
               >
-                <Cart products={products} items={cartItems} />
+                <Cart products={products} items={cartItems} handleQuantity={handleQuantity} />
               </Grid>
             </>
           ) : (

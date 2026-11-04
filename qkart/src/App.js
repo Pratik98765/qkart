@@ -2,7 +2,9 @@ import "./styles.css";
 import Register from "./register.js";
 import Login from "./login.js";
 import Product from "./products.js";
-import Header from "./header";
+import Header from "./header.js";
+import Checkout from "./checkout.js";
+import MyOrders from "./orders.js";
 import { Routes, Route, Link } from "react-router-dom";
 
 export const config = {
@@ -16,6 +18,8 @@ export default function App() {
         <Route path="/" element={<Product />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders" element={<MyOrders />} />
       </Routes>
     </div>
   );
