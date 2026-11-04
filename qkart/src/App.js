@@ -2,10 +2,9 @@ import "./styles.css";
 import Register from "./register.js";
 import Login from "./login.js";
 import Product from "./products.js";
-import Header from "./header.js";
 import Checkout from "./checkout.js";
 import MyOrders from "./orders.js";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 export const config = {
   endpoint: "https://qkart-frontend.onrender.com/api/v1", // Fixed: Added quotes
