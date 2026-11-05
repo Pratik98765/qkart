@@ -130,21 +130,21 @@ const Product = () => {
     }
   };
 
-  useEffect(() => {
-    const onLoad = async () => {
-      await list();
+useEffect(() => {
+  const onLoad = async () => {
+    await list();
 
-      // ✅ Load user-specific cart from localStorage
-      const savedCart = localStorage.getItem(`cart_${username}`);
-      if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
-      } else if (token) {
-        fetchCart(token);
-      }
-    };
+    const savedCart = localStorage.getItem(`cart_${username}`);
 
-    onLoad();
-  }, [username]);
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
+    } else if (token) {
+      fetchCart(token);
+    }
+  };
+
+  onLoad();
+}, [username, token]);
 
   const renderProducts = () => (
     <Grid container sx={{ marginTop: 4 }} spacing={2}>

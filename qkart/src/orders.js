@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Card, CardContent, Divider, Button } from "@mui/material";
 import Header from "./header";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const MyOrders = () => {
