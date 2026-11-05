@@ -27,6 +27,7 @@ const Search = ({ performSearch }) => {
       variant="outlined"
       placeholder="Search for items/categories"
       onChange={handleChange}
+      value={input}
       InputProps={{
         endAdornment: (
           <InputAdornment position="end">

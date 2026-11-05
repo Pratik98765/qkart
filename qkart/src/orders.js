@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 
 const MyOrders = () => {
     const [orders, setOrders] = useState([]);
-    const [products, setProducts] = useState([]);
     const navigate = useNavigate();
     
     useEffect(() => {
@@ -15,15 +14,15 @@ const MyOrders = () => {
         const savedOrders = JSON.parse(localStorage.getItem(`orders_${username}`) || "[]");
         setOrders(savedOrders);
 
-        const getProducts = async () => {
-            try {
-                const response = await axios.get("https://fakestoreapi.com/products");
-                setProducts(response.data);
-            } catch (error) {
-                console.error("could not fetch products", error);
-            }
-        };
-        getProducts();
+        // const getProducts = async () => {
+        //     try {
+        //         const response = await axios.get("https://fakestoreapi.com/products");
+        //         setProducts(response.data);
+        //     } catch (error) {
+        //         console.error("could not fetch products", error);
+        //     }
+        // };
+        // getProducts();
     }, []);
     
     return (

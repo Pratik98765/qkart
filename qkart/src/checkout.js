@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Header from "./header";
 import { Grid, Typography, TextField, Box, Button, Stack, Divider } from "@mui/material";
 import Cart from "./cart";
@@ -19,16 +19,16 @@ const Checkout = () => {
   const token = localStorage.getItem("token");
   const username = localStorage.getItem("username") || "guest";
 
-  const getProducts = async () => {
+  const getProducts = useCallback(async () => {
     try {
       const response = await axios.get("https://fakestoreapi.com/products");
       setProducts(response.data);
     } catch (e) {
       console.error("Could not fetch products", e);
     }
-  };
+  },[])
 
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     if (!token) return;
     const savedCart = localStorage.getItem(`cart_${username}`);
     
@@ -48,9 +48,9 @@ const Checkout = () => {
         console.error("Could not fetch cart", e);
       }
     }
-  };
+  },[token, username]);
 
-  const fetchAddresses = () => {
+  const fetchAddresses = useCallback(() => {
     const savedAddresses = localStorage.getItem(`addresses_${username}`);
 
     if (savedAddresses) {
@@ -58,7 +58,7 @@ const Checkout = () => {
     } else {
       setAddresses([]);
     }
-  };
+  },[username]);
 
   const addAddress = () => {
     if (!newAddress.trim()) {
@@ -88,7 +88,7 @@ const Checkout = () => {
     getProducts();
     fetchCart();
     fetchAddresses();
-  }, []);
+  }, [getProducts, fetchCart, fetchAddresses]);
 
   const placeOrder = () => {
     if (!selectedAddress) {

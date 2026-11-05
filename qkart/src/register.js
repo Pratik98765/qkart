@@ -32,13 +32,13 @@ const Register = () => {
     if (validateInput(formData)) {
       try {
         setLoading(true);
-        let res = await axios.post(`${config.endpoint}/auth/register`, {
-          // Fixed template literal
+        await axios.post(`${config.endpoint}/auth/register`, {
+          
           username: formData.username,
           password: formData.password,
         });
         enqueueSnackbar("Registered Successfully", { variant: "success" });
-        // Redirect to login after successful registration
+  
         
         navigate("/login");
       } catch (err) {
