@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import Header from "./header.js";
 import { Box, Button, CardActions, Grid } from "@mui/material";
@@ -14,11 +15,11 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [cartItems, setCartItems] = useState([]);
 
-  // ✅ Get real token and user scope for data isolation
+  // Get token and username
   const token = localStorage.getItem("token");
   const username = localStorage.getItem("username") || "guest";
 
-  // 1. GET Function (Fetch cart from server)
+  // 1. GET Function - Fetch cart from server
   const fetchCart = async (token) => {
     if (!token) return;
 
@@ -31,17 +32,25 @@ const Product = () => {
           },
         }
       );
+
       const formattedCart = response.data.products.map((p) => ({
         productId: p.productId,
         qty: p.quantity,
       }));
+
       setCartItems(formattedCart);
+
+      // Save fetched cart locally
+      localStorage.setItem(
+        `cart_${username}`,
+        JSON.stringify(formattedCart)
+      );
     } catch (e) {
       console.error("Could not fetch cart", e);
     }
   };
 
-  // 2. POST Function (Update cart on server)
+  // 2. POST Function - Update cart on server
   const updateCartApi = async (productId, qty) => {
     if (!token) return;
 
@@ -64,61 +73,86 @@ const Product = () => {
     }
   };
 
+  // 3. Handle quantity changes
   const handleQuantity = (productId, newQty) => {
     let updatedItems;
 
     if (newQty === 0) {
-      updatedItems = cartItems.filter(item => item.productId !== productId);
+      updatedItems = cartItems.filter(
+        (item) => item.productId !== productId
+      );
     } else {
-      updatedItems = cartItems.map(item => 
-        item.productId === productId ? { ...item, qty: newQty } : item
+      updatedItems = cartItems.map((item) =>
+        item.productId === productId
+          ? { ...item, qty: newQty }
+          : item
       );
     }
+
     setCartItems(updatedItems);
-    
-    // ✅ User-scoped localStorage key
-    localStorage.setItem(`cart_${username}`, JSON.stringify(updatedItems));
+
+    localStorage.setItem(
+      `cart_${username}`,
+      JSON.stringify(updatedItems)
+    );
+
     updateCartApi(productId, newQty);
   };
 
+  // 4. Add product to cart
   const addToCart = (product) => {
     if (!token) {
       alert("Please login to add items to the cart");
       return;
     }
 
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (item) => item.productId === product.id
+    const existingItem = cartItems.find(
+      (item) => item.productId === product.id
+    );
+
+    let newItems;
+
+    if (existingItem) {
+      newItems = cartItems.map((item) =>
+        item.productId === product.id
+          ? { ...item, qty: item.qty + 1 }
+          : item
       );
-      let newItems;
 
-      if (existingItem) {
-        newItems = prevItems.map((item) =>
-          item.productId === product.id ? { ...item, qty: item.qty + 1 } : item
-        );
-        updateCartApi(product.id, existingItem.qty + 1);
-      } else {
-        newItems = [...prevItems, { productId: product.id, qty: 1 }];
-        updateCartApi(product.id, 1);
-      }
+      updateCartApi(product.id, existingItem.qty + 1);
+    } else {
+      newItems = [
+        ...cartItems,
+        { productId: product.id, qty: 1 },
+      ];
 
-      // ✅ User-scoped localStorage key
-      localStorage.setItem(`cart_${username}`, JSON.stringify(newItems));
+      updateCartApi(product.id, 1);
+    }
 
-      return newItems;
-    });
+    setCartItems(newItems);
+
+    localStorage.setItem(
+      `cart_${username}`,
+      JSON.stringify(newItems)
+    );
   };
 
+  // 5. Fetch and search products
   const list = async (searchTerm = "") => {
     try {
       setLoading(true);
-      const response = await axios.get("https://fakestoreapi.com/products");
+
+      const response = await axios.get(
+        "https://fakestoreapi.com/products"
+      );
+
       let allProducts = response.data;
 
       if (searchTerm) {
         allProducts = allProducts.filter((product) =>
-          product.title.toLowerCase().includes(searchTerm.toLowerCase())
+          product.title
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
         );
       }
 
@@ -130,27 +164,34 @@ const Product = () => {
     }
   };
 
-useEffect(() => {
-  const onLoad = async () => {
-    await list();
+  // 6. Load products and cart when component loads
+  useEffect(() => {
+    const onLoad = async () => {
+      await list();
 
-    const savedCart = localStorage.getItem(`cart_${username}`);
+      const savedCart = localStorage.getItem(`cart_${username}`);
 
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    } else if (token) {
-      fetchCart(token);
-    }
-  };
+      if (savedCart) {
+        try {
+          setCartItems(JSON.parse(savedCart));
+        } catch (error) {
+          console.error("Invalid saved cart data", error);
+          localStorage.removeItem(`cart_${username}`);
+        }
+      } else if (token) {
+        await fetchCart(token);
+      }
+    };
 
-  onLoad();
-}, [username, token]);
+    onLoad();
+  }, [username, token]);
 
+  // 7. Display products
   const renderProducts = () => (
     <Grid container sx={{ marginTop: 4 }} spacing={2}>
       {products.map((product) => (
         <Grid item xs={12} sm={6} md={3} key={product.id}>
-          <Card sx={{ maxWidth: 345 }}>
+          <Card sx={{ maxWidth: 345, height: "100%" }}>
             <CardMedia
               component="img"
               height="200"
@@ -158,12 +199,17 @@ useEffect(() => {
               alt={product.title}
               sx={{ objectFit: "contain" }}
             />
+
             <CardContent>
               <Typography variant="h6" noWrap>
                 {product.title}
               </Typography>
-              <Typography variant="body2">₹ {product.price}</Typography>
+
+              <Typography variant="body2">
+                ₹ {product.price}
+              </Typography>
             </CardContent>
+
             <CardActions sx={{ p: 2, pt: 0 }}>
               <Button
                 fullWidth
@@ -181,6 +227,7 @@ useEffect(() => {
     </Grid>
   );
 
+  // 8. Main UI
   return (
     <>
       <Header performSearch={list} />
@@ -188,11 +235,19 @@ useEffect(() => {
       <Box
         component="img"
         src="https://miro.medium.com/v2/resize:fit:870/1*i-E6kKQ0qSPisgKa0i-JYA.png"
-        sx={{ width: "100%", height: "400px", objectFit: "fill" }}
+        alt="QKart banner"
+        sx={{
+          width: "100%",
+          height: { xs: "200px", sm: "280px", md: "350px", lg: "400px" },
+          objectFit: "fill",
+          display: "block",
+        }}
       />
 
       {loading ? (
-        <h2>Loading...</h2>
+        <Typography variant="h6" textAlign="center" sx={{ mt: 4 }}>
+          Loading...
+        </Typography>
       ) : (
         <Grid container>
           {token ? (
@@ -205,9 +260,16 @@ useEffect(() => {
                 item
                 xs={12}
                 md={3}
-                sx={{ bgcolor: "#E9F5E1", minHeight: "100vh" }}
+                sx={{
+                  bgcolor: "#E9F5E1",
+                  minHeight: "100vh",
+                }}
               >
-                <Cart products={products} items={cartItems} handleQuantity={handleQuantity} />
+                <Cart
+                  products={products}
+                  items={cartItems}
+                  handleQuantity={handleQuantity}
+                />
               </Grid>
             </>
           ) : (
